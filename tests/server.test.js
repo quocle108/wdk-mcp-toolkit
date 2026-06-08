@@ -29,28 +29,34 @@ describe('WdkMcpServer', () => {
   })
 
   describe('wdk', () => {
-    test('should allow access to non-blocked methods', () => {
-      server.useWdk({ seed: SEED_PHRASE })
-
-      expect(() => server.wdk.getAccount).not.toThrow()
+    test('should return null before useWdk() is called', () => {
+      expect(server.wdk).toBeNull()
     })
 
-    test('should throw when accessing registerWallet directly', () => {
+    test('should forward non-redirected property access to underlying WDK', () => {
       server.useWdk({ seed: SEED_PHRASE })
 
-      expect(() => server.wdk.registerWallet).toThrow('Use WdkMcpServer#registerWallet() instead of wdk.registerWallet()')
+      expect(typeof server.wdk.getAccount).toBe('function')
     })
 
-    test('should throw when accessing registerProtocol directly', () => {
+    test('should redirect registerWallet to WdkMcpServer#registerWallet', () => {
+      const WalletManagerMock = jest.fn()
+      const CONFIG = { provider: 'https://eth.drpc.org' }
       server.useWdk({ seed: SEED_PHRASE })
 
-      expect(() => server.wdk.registerProtocol).toThrow('Use WdkMcpServer#registerProtocol() instead of wdk.registerProtocol()')
+      server.wdk.registerWallet('ethereum', WalletManagerMock, CONFIG)
+
+      expect(server.getChains()).toContain('ethereum')
     })
 
-    test('should throw when accessing registerMiddleware directly', () => {
+    test('should redirect registerProtocol to WdkMcpServer#registerProtocol', () => {
+      const SwapProtocolMock = jest.fn()
+      Object.setPrototypeOf(SwapProtocolMock.prototype, SwapProtocol.prototype)
       server.useWdk({ seed: SEED_PHRASE })
 
-      expect(() => server.wdk.registerMiddleware).toThrow('Use WdkMcpServer#registerMiddleware() instead of wdk.registerMiddleware()')
+      server.wdk.registerProtocol('ethereum', 'velora', SwapProtocolMock, { apiKey: 'test-key' })
+
+      expect(server.getSwapProtocols('ethereum')).toContain('velora')
     })
   })
 
