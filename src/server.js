@@ -207,9 +207,10 @@ export class WdkMcpServer extends McpServer {
   }
 
   /**
-   * The WDK instance. `registerWallet` and `registerProtocol` are
-   * redirected to the server's own methods so server-level bookkeeping
-   * stays consistent; all other reads forward to the underlying WDK.
+   * The WDK instance.
+   *
+   * Calling the `registerWallet` or the `registerProtocol` method on the instance
+   * also registers the wallet or protocol to the MCP server.
    *
    * @type {WDK | null}
    */
@@ -217,9 +218,19 @@ export class WdkMcpServer extends McpServer {
     if (!this._wdk) return null
 
     return new Proxy(this._wdk, {
-      get: (target, prop) => {
-        if (prop === 'registerWallet') return this.registerWallet
-        if (prop === 'registerProtocol') return this.registerProtocol.bind(this)
+      get: (target, prop, receiver) => {
+        if (prop === 'registerWallet') {
+          return (...args) => {
+            this.registerWallet(...args)
+            return receiver
+          }
+        }
+        if (prop === 'registerProtocol') {
+          return (...args) => {
+            this.registerProtocol(...args)
+            return receiver
+          }
+        }
         return target[prop]
       }
     })

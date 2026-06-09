@@ -85,6 +85,9 @@ export class WdkMcpServer extends McpServer {
     /**
      * The WDK instance.
      *
+     * Calling the `registerWallet` or the `registerProtocol` method on the instance
+     * also registers the wallet or protocol to the MCP server.
+     *
      * @type {WDK | null}
      */
     get wdk(): WDK | null;
@@ -113,10 +116,10 @@ export class WdkMcpServer extends McpServer {
      * If elicitation is disabled, auto-confirms the operation.
      *
      * @param {string} message - The confirmation message to display.
-     * @param {Object} schema - The JSON Schema for the confirmation form.
+     * @param {ElicitRequestFormParams['requestedSchema']} schema - The JSON Schema for the confirmation form.
      * @returns {Promise<ConfirmationResult>} The confirmation result.
      */
-    requestConfirmation(message: string, schema: ElicitRequestFormParams['requestedSchema']): Promise<ConfirmationResult>;
+    requestConfirmation(message: string, schema: ElicitRequestFormParams["requestedSchema"]): Promise<ConfirmationResult>;
     /**
      * Enables WDK and initializes the wallet development kit.
      *
@@ -253,6 +256,7 @@ export class WdkMcpServer extends McpServer {
      */
     getFiatProtocols(chain: string): string[];
 }
+export type ElicitRequestFormParams = import("@modelcontextprotocol/sdk/types.js").ElicitRequestFormParams;
 export type WdkIndexerConfig = import("@tetherto/wdk-indexer-http").WdkIndexerConfig;
 export type WalletManager = typeof import("@tetherto/wdk-wallet").default;
 export type TokenInfo = {
@@ -313,14 +317,10 @@ export type ConfirmationResult = {
      * - The confirmation content.
      */
     content?: {
-        /**
-         * - Whether the confirmation has been actually confirmed.
-         */
         confirmed?: boolean;
     };
 };
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { ElicitRequestFormParams } from '@modelcontextprotocol/sdk/types.js';
 import WDK from '@tetherto/wdk';
 import { WdkIndexerClient } from '@tetherto/wdk-indexer-http';
 import { BitfinexPricingClient } from '@tetherto/wdk-pricing-bitfinex-http';
