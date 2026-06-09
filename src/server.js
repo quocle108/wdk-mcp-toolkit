@@ -218,7 +218,7 @@ export class WdkMcpServer extends McpServer {
 
     return new Proxy(this._wdk, {
       get: (target, prop) => {
-        if (prop === 'registerWallet') return this.registerWallet.bind(this)
+        if (prop === 'registerWallet') return this.registerWallet
         if (prop === 'registerProtocol') return this.registerProtocol.bind(this)
         return target[prop]
       }
