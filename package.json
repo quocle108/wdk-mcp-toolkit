@@ -18,6 +18,12 @@
   "main": "index.js",
   "type": "module",
   "types": "./types",
+  "files": [
+    "bin/",
+    "index.js",
+    "src/",
+    "types/"
+  ],
   "scripts": {
     "build:types": "tsc",
     "lint": "standard",
