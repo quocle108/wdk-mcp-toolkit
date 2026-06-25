@@ -546,6 +546,7 @@ export class WdkMcpServer extends McpServer {
     if (this._wdk && typeof this._wdk.dispose === 'function') {
       this._wdk.dispose()
     }
+    this._wdk = null
 
     await super.close()
   }

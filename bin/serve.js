@@ -15,6 +15,7 @@
 
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import { execSync } from 'node:child_process'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { WdkMcpServer } from '../src/server.js'
 import { PRICING_TOOLS } from '../src/tools/pricing/index.js'
@@ -96,6 +97,44 @@ async function loadConfig (configPath) {
   }
 }
 
+/**
+ * Resolves the BIP-39 seed from one of several sources, in priority order:
+ *   1. WDK_SEED         - the seed value supplied directly.
+ *   2. WDK_SEED_COMMAND - a command whose stdout is the seed.
+ *   3. WDK_SEED_FILE    - a file whose contents are the seed.
+ *
+ * This lets an MCP client source the seed from an OS secret manager or a
+ * protected file instead of storing it verbatim in a plaintext config.
+ *
+ * @returns {Promise<string|null>} The trimmed seed, or null if no source is configured.
+ * @throws {Error} If a configured command or file source fails.
+ */
+export async function resolveSeed () {
+  if (process.env.WDK_SEED) {
+    return process.env.WDK_SEED.trim()
+  }
+
+  if (process.env.WDK_SEED_COMMAND) {
+    try {
+      const output = execSync(process.env.WDK_SEED_COMMAND, { encoding: 'utf-8' })
+      return output.trim()
+    } catch (err) {
+      throw new Error(`Failed to resolve seed from WDK_SEED_COMMAND: ${err.message}`)
+    }
+  }
+
+  if (process.env.WDK_SEED_FILE) {
+    try {
+      const raw = await fs.readFile(path.resolve(process.env.WDK_SEED_FILE), 'utf-8')
+      return raw.trim()
+    } catch (err) {
+      throw new Error(`Failed to resolve seed from WDK_SEED_FILE: ${err.message}`)
+    }
+  }
+
+  return null
+}
+
 function getChainDef (chain, chainModules) {
   const mod = chainModules[chain]
   if (!mod) return null
@@ -163,8 +202,14 @@ export async function serve () {
   server.usePricing()
   console.error('Pricing: enabled')
 
-  if (process.env.WDK_SEED) {
-    server.useWdk({ seed: process.env.WDK_SEED })
+  const seed = await resolveSeed()
+
+  if (seed) {
+    server.useWdk({ seed })
+    // WDK now holds its own reference; drop the plaintext copy from the
+    // environment so it is not inherited by child processes or exposed via
+    // /proc, env-logging diagnostics...
+    delete process.env.WDK_SEED
 
     const requestedChains = (userConfig && userConfig.enabledChains)
       ? userConfig.enabledChains.map(c => c.toLowerCase())
@@ -233,8 +278,8 @@ export async function serve () {
       console.error('Indexer: enabled')
     }
   } else {
-    console.error('WDK_SEED not set — running with pricing tools only')
-    console.error('Set WDK_SEED to enable wallet, swap, bridge, and lending tools')
+    console.error('No seed configured — running with pricing tools only')
+    console.error('Set WDK_SEED, WDK_SEED_COMMAND, or WDK_SEED_FILE to enable wallet, swap, bridge, and lending tools')
   }
 
   server.registerTools(tools)

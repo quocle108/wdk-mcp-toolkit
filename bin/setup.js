@@ -15,6 +15,7 @@
 
 import { password, input, confirm, checkbox } from '@inquirer/prompts'
 import pc from 'picocolors'
+import { validateMnemonic, wordlists } from 'bip39'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { exec as execCallback } from 'node:child_process'
@@ -176,9 +177,13 @@ async function collectSeedPhrase () {
       if (!value || value.trim() === '') {
         return 'Seed phrase is required for wallet operations'
       }
-      const words = value.trim().split(/\s+/)
+      const phrase = value.trim().replace(/\s+/g, ' ')
+      const words = phrase.split(' ')
       if (words.length !== 12 && words.length !== 24) {
         return 'Seed phrase must be 12 or 24 words'
+      }
+      if (!validateMnemonic(phrase, wordlists.english)) {
+        return 'Invalid BIP-39 seed phrase (failed checksum or contains non-English words)'
       }
       return true
     }

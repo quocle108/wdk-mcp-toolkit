@@ -40,6 +40,21 @@ const transport = new StdioServerTransport()
 await server.connect(transport)
 ```
 
+## Seed Sourcing
+
+When you run the bundled server (`wdk-mcp-toolkit serve`), the BIP-39 seed is read
+from the first of these environment variables that is set, so you can keep it out of
+plaintext config by pointing at a secret manager or protected file:
+
+| Variable | Seed source |
+|----------|-------------|
+| `WDK_SEED` | The seed value supplied directly. |
+| `WDK_SEED_COMMAND` | A command whose stdout is the seed, e.g. `op read op://Private/wdk-seed`. |
+| `WDK_SEED_FILE` | A path to a file whose contents are the seed, e.g. `/run/secrets/wdk-seed`. |
+
+The value is trimmed. If a configured command or file fails, startup aborts with an
+error; if none are set, the server runs with pricing tools only.
+
 ## Key Capabilities
 
 - **MCP Server Extension**: Extends the official `@modelcontextprotocol/sdk` server with WDK-specific capabilities
@@ -48,7 +63,7 @@ await server.connect(transport)
 - **Read/Write Tool Sets**: Register read-only tools for safer agent access or write tools for approved transactions
 - **Human Confirmation**: Use MCP elicitations to require approval before sensitive write operations
 - **Extensible Design**: Add custom MCP tools alongside WDK tools
-- **Secure Memory Disposal**: Dispose wallet instances and clear private keys from memory
+- **Wallet Disposal**: Release wallet instances on shutdown via WDK's `dispose()`. Note: JavaScript seed strings are immutable and cannot be reliably zeroized, so disposal frees references rather than guaranteeing secure erasure of the seed from memory.
 
 ## Compatibility
 
