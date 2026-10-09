@@ -14,7 +14,7 @@
 'use strict'
 
 import { z } from 'zod'
-import { parseAmountToBaseUnits, formatBaseUnitsToAmount } from '../../utils/index.js'
+import { parseAmount } from '../../utils/index.js'
 
 /** @typedef {import('../../server.js').WdkMcpServer} WdkMcpServer */
 
@@ -95,27 +95,25 @@ Error Handling:
 
         const { address: tokenAddress, decimals } = tokenInfo
 
-        const baseUnitAmount = parseAmountToBaseUnits(amount, decimals)
+        const { baseUnits, display } = parseAmount(amount, decimals)
 
-        if (baseUnitAmount === 0n) {
+        if (baseUnits === 0n) {
           throw new Error('Amount must be greater than zero')
         }
-
-        const confirmedAmount = formatBaseUnitsToAmount(baseUnitAmount, decimals)
 
         const account = await server.wdk.getAccount(chain, 0)
 
         const quote = await account.quoteTransfer({
           token: tokenAddress,
           recipient: to,
-          amount: baseUnitAmount
+          amount: baseUnits
         })
 
         const confirmationMessage = `⚠️  TOKEN TRANSFER CONFIRMATION REQUIRED
 
 Token: ${tokenSymbol}
 To: ${to}
-Amount: ${confirmedAmount} ${tokenSymbol} (${baseUnitAmount.toString()} base units)
+Amount: ${display} ${tokenSymbol} (${baseUnits.toString()} base units)
 Estimated Fee: ${quote.fee.toString()}
 
 This transfer is IRREVERSIBLE once broadcast to the ${chain} network.
@@ -146,7 +144,7 @@ Do you want to proceed with this transfer?`
         const txResult = await account.transfer({
           token: tokenAddress,
           recipient: to,
-          amount: baseUnitAmount
+          amount: baseUnits
         })
 
         return {

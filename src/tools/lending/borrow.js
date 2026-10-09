@@ -14,7 +14,7 @@
 'use strict'
 
 import { z } from 'zod'
-import { parseAmountToBaseUnits, formatBaseUnitsToAmount } from '../../utils/index.js'
+import { parseAmount } from '../../utils/index.js'
 
 /** @typedef {import('../../server.js').WdkMcpServer} WdkMcpServer */
 
@@ -118,13 +118,12 @@ Error Handling:
         const account = await server.wdk.getAccount(chain, 0)
         const lendingProtocol = account.getLendingProtocol(label)
 
-        const baseAmount = parseAmountToBaseUnits(amount, tokenInfo.decimals)
-        const confirmedAmount = formatBaseUnitsToAmount(baseAmount, tokenInfo.decimals)
+        const { baseUnits, display } = parseAmount(amount, tokenInfo.decimals)
         const onBehalfOfAddress = onBehalfOf || await account.getAddress()
 
         const options = {
           token: tokenInfo.address,
-          amount: baseAmount,
+          amount: baseUnits,
           onBehalfOf: onBehalfOfAddress
         }
 
@@ -135,7 +134,7 @@ Error Handling:
 Protocol: ${label}
 Chain: ${chain}
 Token: ${token}
-Amount: ${confirmedAmount}
+Amount: ${display}
 Borrower: ${onBehalfOfAddress}
 Estimated Fee: ${quote.fee.toString()}
 
@@ -171,7 +170,7 @@ Do you want to proceed with this borrow?`
           hash: borrowResult.hash,
           chain,
           token,
-          amount: confirmedAmount,
+          amount: display,
           fee: borrowResult.fee.toString()
         }
 

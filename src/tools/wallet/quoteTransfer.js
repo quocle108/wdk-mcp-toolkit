@@ -14,7 +14,7 @@
 'use strict'
 
 import { z } from 'zod'
-import { parseAmountToBaseUnits, formatBaseUnitsToAmount } from '../../utils/index.js'
+import { parseAmount } from '../../utils/index.js'
 
 /** @typedef {import('../../server.js').WdkMcpServer} WdkMcpServer */
 
@@ -107,19 +107,17 @@ Error Handling:
 
         const { address: tokenAddress, decimals } = tokenInfo
 
-        const baseUnitAmount = parseAmountToBaseUnits(amount, decimals)
+        const { baseUnits, display } = parseAmount(amount, decimals)
 
-        if (baseUnitAmount === 0n) {
+        if (baseUnits === 0n) {
           throw new Error('Amount must be greater than zero')
         }
-
-        const confirmedAmount = formatBaseUnitsToAmount(baseUnitAmount, decimals)
 
         const account = await server.wdk.getAccount(chain, 0)
         const result = await account.quoteTransfer({
           token: tokenAddress,
           recipient,
-          amount: baseUnitAmount
+          amount: baseUnits
         })
 
         const feeStr = result.fee.toString()
@@ -127,7 +125,7 @@ Error Handling:
         return {
           content: [{
             type: 'text',
-            text: `Estimated fee for transferring ${confirmedAmount} ${tokenSymbol}: ${feeStr}`
+            text: `Estimated fee for transferring ${display} ${tokenSymbol}: ${feeStr}`
           }],
           structuredContent: {
             fee: feeStr

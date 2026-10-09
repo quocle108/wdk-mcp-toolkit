@@ -23,6 +23,35 @@
  */
 export function parseAmountToBaseUnits(amount: string, decimals: number): bigint;
 /**
+ * A user-supplied amount in both the form that is sent and the form that is shown.
+ *
+ * @typedef {Object} ParsedAmount
+ * @property {bigint} baseUnits - The amount in base units, to be sent on-chain.
+ * @property {string} display - The same amount rendered back as a decimal string, to be shown to the user.
+ */
+/**
+ * Parses a human-readable amount into the value to send and the value to display.
+ *
+ * Both fields derive from the same parse, so a confirmation prompt built from
+ * `display` always describes the `baseUnits` that are submitted.
+ *
+ * @param {string} amount - The amount to parse (e.g., "2.01", "1,000.50", "100")
+ * @param {number} decimals - The number of decimal places for the token (e.g., 6 for USDT, 18 for ETH)
+ * @returns {ParsedAmount} The amount in base units together with its display form.
+ * @throws {AmountParseError} If `decimals` is not an integer between 0 and 77 (`INVALID_DECIMALS`).
+ * @throws {AmountParseError} If `amount` is not a string (`INVALID_FORMAT`).
+ * @throws {AmountParseError} If `amount` is empty or contains only whitespace (`EMPTY_STRING`).
+ * @throws {AmountParseError} If `amount` is negative (`NEGATIVE_AMOUNT`).
+ * @throws {AmountParseError} If `amount` uses a comma as anything other than a thousand separator, such as "0,5" (`AMBIGUOUS_SEPARATOR`).
+ * @throws {AmountParseError} If `amount` is not a positive decimal number (`INVALID_FORMAT`).
+ * @throws {AmountParseError} If `amount` is in scientific notation and expands past `decimals` places (`SCIENTIFIC_NOTATION_PRECISION`).
+ * @throws {AmountParseError} If `amount` has more decimal places than `decimals` (`EXCESSIVE_PRECISION`).
+ *
+ * @example
+ * parseAmount("1,000.50", 6)  // Returns { baseUnits: 1000500000n, display: "1000.5" }
+ */
+export function parseAmount(amount: string, decimals: number): ParsedAmount;
+/**
  * Formats base units (BigInt) back to a human-readable amount string.
  *
  * This is the inverse of parseAmountToBaseUnits. It handles formatting
@@ -65,3 +94,16 @@ export class AmountParseError extends Error {
     constructor(message: string, code: string);
     code: string;
 }
+/**
+ * A user-supplied amount in both the form that is sent and the form that is shown.
+ */
+export type ParsedAmount = {
+    /**
+     * - The amount in base units, to be sent on-chain.
+     */
+    baseUnits: bigint;
+    /**
+     * - The same amount rendered back as a decimal string, to be shown to the user.
+     */
+    display: string;
+};

@@ -14,7 +14,7 @@
 'use strict'
 
 import { z } from 'zod'
-import { parseAmountToBaseUnits, formatBaseUnitsToAmount } from '../../utils/index.js'
+import { parseAmount } from '../../utils/index.js'
 
 /** @typedef {import('../../server.js').WdkMcpServer} WdkMcpServer */
 
@@ -125,14 +125,13 @@ Error Handling:
         const account = await server.wdk.getAccount(chain, 0)
         const bridgeProtocol = account.getBridgeProtocol(label)
 
-        const baseAmount = parseAmountToBaseUnits(amount, tokenInfo.decimals)
-        const confirmedAmount = formatBaseUnitsToAmount(baseAmount, tokenInfo.decimals)
+        const { baseUnits, display } = parseAmount(amount, tokenInfo.decimals)
         const recipientAddress = recipient || await account.getAddress()
 
         const options = {
           targetChain,
           token: tokenInfo.address,
-          amount: baseAmount,
+          amount: baseUnits,
           recipient: recipientAddress
         }
 
@@ -146,7 +145,7 @@ Protocol: ${label}
 From: ${chain}
 To: ${targetChain}
 Token: ${token}
-Amount: ${confirmedAmount}
+Amount: ${display}
 Recipient: ${recipientAddress}
 Gas Fee: ${quote.fee.toString()}
 Bridge Fee: ${quote.bridgeFee.toString()}
@@ -183,7 +182,7 @@ Do you want to proceed with this bridge?`
           sourceChain: chain,
           targetChain,
           token,
-          amount: confirmedAmount,
+          amount: display,
           fee: bridgeResult.fee.toString(),
           bridgeFee: bridgeResult.bridgeFee.toString()
         }
