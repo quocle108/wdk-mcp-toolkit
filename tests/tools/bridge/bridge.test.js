@@ -128,7 +128,11 @@ describe('bridge', () => {
           fee: 21000000000000n,
           bridgeFee: 500000000000000n
         })
-        const bridgeMock = jest.fn().mockResolvedValue({ hash: '0xabc123' })
+        const bridgeMock = jest.fn().mockResolvedValue({
+          hash: '0xabc123',
+          fee: 21000000000000n,
+          bridgeFee: 500000000000000n
+        })
 
         const accountMock = {
           getAddress: jest.fn().mockResolvedValue(WALLET_ADDRESS),
@@ -142,7 +146,7 @@ describe('bridge', () => {
         server.wdk.getAccount.mockResolvedValue(accountMock)
         server.requestConfirmation.mockResolvedValue({ action: 'accept', content: { confirmed: true } })
 
-        await handler({
+        const result = await handler({
           chain: 'ethereum',
           targetChain: 'arbitrum',
           token: 'USDT',
@@ -150,10 +154,26 @@ describe('bridge', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('Amount: 1000.5\n'),
-          expect.any(Object)
+          `⚠️  BRIDGE CONFIRMATION REQUIRED\n\nProtocol: usdt0\nFrom: ethereum\nTo: arbitrum\nToken: USDT\nAmount: 1000.5\nRecipient: ${WALLET_ADDRESS}\nGas Fee: 21000000000000\nBridge Fee: 500000000000000\nTotal Fee: 521000000000000\n\nThis bridge is IRREVERSIBLE once broadcast. Tokens will arrive on arbitrum after confirmation (may take minutes to hours).\n\nDo you want to proceed with this bridge?`,
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Bridge',
+                description: 'Check to confirm and execute bridge'
+              }
+            },
+            required: ['confirmed']
+          }
         )
-        expect(bridgeMock).toHaveBeenCalledWith(expect.objectContaining({ amount: 1000500000n }))
+        expect(bridgeMock).toHaveBeenCalledWith({
+          targetChain: 'arbitrum',
+          token: USDT_INFO.address,
+          amount: 1000500000n,
+          recipient: WALLET_ADDRESS
+        })
+        expect(result.structuredContent.amount).toBe('1000.5')
       })
 
       test('should return cancelled message when user declines', async () => {

@@ -76,7 +76,7 @@ Error Handling:
       inputSchema: z.object({
         chain: z.enum(lendingChains).describe('The blockchain where the lending pool is'),
         token: z.string().describe('The token symbol to repay (e.g., "USDT")'),
-        amount: z.string().describe('The amount in human-readable units (e.g., "100")'),
+        amount: z.string().describe('The amount in human-readable units (e.g., "100"). Use "." as the decimal separator; "," is accepted only as a thousand separator (e.g., "1,000.50").'),
         onBehalfOf: z.string().optional().describe('Address whose debt to repay (defaults to wallet address)')
       }),
       outputSchema: z.object({
@@ -169,7 +169,7 @@ Do you want to proceed with this repayment?`
           hash: repayResult.hash,
           chain,
           token,
-          amount,
+          amount: confirmedAmount,
           fee: repayResult.fee.toString()
         }
 

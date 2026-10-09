@@ -14,7 +14,7 @@
 'use strict'
 
 import { z } from 'zod'
-import { parseAmountToBaseUnits } from '../../utils/index.js'
+import { parseAmountToBaseUnits, formatBaseUnitsToAmount } from '../../utils/index.js'
 
 /** @typedef {import('../../server.js').WdkMcpServer} WdkMcpServer */
 
@@ -64,7 +64,7 @@ Error Handling:
       inputSchema: z.object({
         chain: z.enum(lendingChains).describe('The blockchain where the lending pool is'),
         token: z.string().describe('The token symbol to withdraw (e.g., "USDT")'),
-        amount: z.string().describe('The amount in human-readable units (e.g., "100")'),
+        amount: z.string().describe('The amount in human-readable units (e.g., "100"). Use "." as the decimal separator; "," is accepted only as a thousand separator (e.g., "1,000.50").'),
         to: z.string().optional().describe('Address to receive tokens (defaults to wallet address)')
       }),
       outputSchema: z.object({
@@ -105,6 +105,7 @@ Error Handling:
         const lendingProtocol = account.getLendingProtocol(label)
 
         const baseAmount = parseAmountToBaseUnits(amount, tokenInfo.decimals)
+        const confirmedAmount = formatBaseUnitsToAmount(baseAmount, tokenInfo.decimals)
 
         const options = {
           token: tokenInfo.address,
@@ -118,7 +119,7 @@ Error Handling:
           protocol: label,
           chain,
           token,
-          amount,
+          amount: confirmedAmount,
           fee: quote.fee.toString()
         }
 

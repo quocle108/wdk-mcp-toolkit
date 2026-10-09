@@ -67,7 +67,7 @@ Error Handling:
         chain: z.enum(chains).describe('The blockchain to transfer on'),
         token: z.string().describe('Token symbol (e.g., "USDT", "USDC", "DAI")'),
         to: z.string().describe('The recipient address'),
-        amount: z.string().describe('The amount to transfer in human-readable format (e.g., "10" or "0.5")')
+        amount: z.string().describe('The amount to transfer in human-readable format (e.g., "10" or "0.5"). Use "." as the decimal separator; "," is accepted only as a thousand separator (e.g., "1,000.50").')
       }),
       outputSchema: z.object({
         hash: z.string().describe('Transaction hash'),

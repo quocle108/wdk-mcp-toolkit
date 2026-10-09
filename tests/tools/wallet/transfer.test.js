@@ -248,8 +248,18 @@ describe('transfer', () => {
         })
 
         expect(server.requestConfirmation).toHaveBeenCalledWith(
-          expect.stringContaining('Amount: 1000.5 USDT (1000500000 base units)'),
-          expect.any(Object)
+          `⚠️  TOKEN TRANSFER CONFIRMATION REQUIRED\n\nToken: USDT\nTo: ${RECIPIENT}\nAmount: 1000.5 USDT (1000500000 base units)\nEstimated Fee: 21000000000000\n\nThis transfer is IRREVERSIBLE once broadcast to the ethereum network.\n\nDo you want to proceed with this transfer?`,
+          {
+            type: 'object',
+            properties: {
+              confirmed: {
+                type: 'boolean',
+                title: 'Confirm Transfer',
+                description: 'Check to confirm and send transfer'
+              }
+            },
+            required: ['confirmed']
+          }
         )
         expect(transferMock).toHaveBeenCalledWith({
           token: USDT_INFO.address,

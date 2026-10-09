@@ -7,8 +7,14 @@
  * @param {string} amount - The amount to parse (e.g., "2.01", "1,000.50", "100")
  * @param {number} decimals - The number of decimal places for the token (e.g., 6 for USDT, 18 for ETH)
  * @returns {bigint} The amount in base units (wei, satoshis, etc.)
- * @throws {AmountParseError} If the input is invalid, or if a comma is used as
- * anything other than a thousand separator (e.g., "0,5").
+ * @throws {AmountParseError} If `decimals` is not an integer between 0 and 77 (`INVALID_DECIMALS`).
+ * @throws {AmountParseError} If `amount` is not a string (`INVALID_FORMAT`).
+ * @throws {AmountParseError} If `amount` is empty or contains only whitespace (`EMPTY_STRING`).
+ * @throws {AmountParseError} If `amount` is negative (`NEGATIVE_AMOUNT`).
+ * @throws {AmountParseError} If `amount` uses a comma as anything other than a thousand separator, such as "0,5" (`AMBIGUOUS_SEPARATOR`).
+ * @throws {AmountParseError} If `amount` is not a positive decimal number (`INVALID_FORMAT`).
+ * @throws {AmountParseError} If `amount` is in scientific notation and expands past `decimals` places (`SCIENTIFIC_NOTATION_PRECISION`).
+ * @throws {AmountParseError} If `amount` has more decimal places than `decimals` (`EXCESSIVE_PRECISION`).
  *
  * @example
  * parseAmountToBaseUnits("2.01", 6)  // Returns 2010000n

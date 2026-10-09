@@ -75,7 +75,7 @@ Error Handling:
       inputSchema: z.object({
         chain: z.enum(lendingChains).describe('The blockchain where the lending pool is'),
         token: z.string().describe('The token symbol to withdraw (e.g., "USDT")'),
-        amount: z.string().describe('The amount in human-readable units (e.g., "100")'),
+        amount: z.string().describe('The amount in human-readable units (e.g., "100"). Use "." as the decimal separator; "," is accepted only as a thousand separator (e.g., "1,000.50").'),
         to: z.string().optional().describe('Address to receive tokens (defaults to wallet address)')
       }),
       outputSchema: z.object({
@@ -168,7 +168,7 @@ Do you want to proceed with this withdrawal?`
           hash: withdrawResult.hash,
           chain,
           token,
-          amount,
+          amount: confirmedAmount,
           fee: withdrawResult.fee.toString()
         }
 
