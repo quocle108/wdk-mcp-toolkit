@@ -53,6 +53,24 @@ describe('parseAmountToBaseUnits', () => {
     ])('strips commas from "%s"', (input, decimals, expected) => {
       expect(parseAmountToBaseUnits(input, decimals)).toBe(expected)
     })
+
+    test.each([
+      ['0,5'],
+      ['0,100000'],
+      ['1000,000'],
+      ['12,34,567']
+    ])('rejects "%s" instead of stripping the comma', (input) => {
+      expect(() => parseAmountToBaseUnits(input, 6)).toThrow(new AmountParseError(
+        `Ambiguous amount format: "${input}". Commas are only accepted as thousand separators ` +
+        'in groups of three (e.g., "1,000.50"). Use "." as the decimal separator.'
+      ))
+
+      try {
+        parseAmountToBaseUnits(input, 6)
+      } catch (e) {
+        expect(e.code).toBe(AMOUNT_ERROR_CODES.AMBIGUOUS_SEPARATOR)
+      }
+    })
   })
 
   describe('scientific notation', () => {

@@ -226,6 +226,38 @@ describe('transfer', () => {
         )
       })
 
+      test('should confirm the parsed amount rather than the raw argument', async () => {
+        server.getTokenInfo.mockReturnValue(USDT_INFO)
+
+        const transferMock = jest.fn().mockResolvedValue({
+          hash: '0xabc123',
+          fee: 21000000000000n
+        })
+        const accountMock = {
+          quoteTransfer: jest.fn().mockResolvedValue({ fee: 21000000000000n }),
+          transfer: transferMock
+        }
+        server.wdk.getAccount.mockResolvedValue(accountMock)
+        server.requestConfirmation.mockResolvedValue({ action: 'accept', content: { confirmed: true } })
+
+        await handler({
+          chain: 'ethereum',
+          token: 'USDT',
+          to: RECIPIENT,
+          amount: '1,000.50'
+        })
+
+        expect(server.requestConfirmation).toHaveBeenCalledWith(
+          expect.stringContaining('Amount: 1000.5 USDT (1000500000 base units)'),
+          expect.any(Object)
+        )
+        expect(transferMock).toHaveBeenCalledWith({
+          token: USDT_INFO.address,
+          recipient: RECIPIENT,
+          amount: 1000500000n
+        })
+      })
+
       test('should return cancelled message when user declines', async () => {
         server.getTokenInfo.mockReturnValue(USDT_INFO)
 

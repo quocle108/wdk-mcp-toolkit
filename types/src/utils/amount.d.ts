@@ -7,7 +7,8 @@
  * @param {string} amount - The amount to parse (e.g., "2.01", "1,000.50", "100")
  * @param {number} decimals - The number of decimal places for the token (e.g., 6 for USDT, 18 for ETH)
  * @returns {bigint} The amount in base units (wei, satoshis, etc.)
- * @throws {AmountParseError} If the input is invalid
+ * @throws {AmountParseError} If the input is invalid, or if a comma is used as
+ * anything other than a thousand separator (e.g., "0,5").
  *
  * @example
  * parseAmountToBaseUnits("2.01", 6)  // Returns 2010000n
@@ -43,6 +44,7 @@ export namespace AMOUNT_ERROR_CODES {
     let EXCESSIVE_PRECISION: string;
     let INVALID_DECIMALS: string;
     let SCIENTIFIC_NOTATION_PRECISION: string;
+    let AMBIGUOUS_SEPARATOR: string;
 }
 /**
  * Error thrown when amount parsing fails due to invalid input.

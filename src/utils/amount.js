@@ -24,7 +24,8 @@ export const AMOUNT_ERROR_CODES = {
   NEGATIVE_AMOUNT: 'NEGATIVE_AMOUNT',
   EXCESSIVE_PRECISION: 'EXCESSIVE_PRECISION',
   INVALID_DECIMALS: 'INVALID_DECIMALS',
-  SCIENTIFIC_NOTATION_PRECISION: 'SCIENTIFIC_NOTATION_PRECISION'
+  SCIENTIFIC_NOTATION_PRECISION: 'SCIENTIFIC_NOTATION_PRECISION',
+  AMBIGUOUS_SEPARATOR: 'AMBIGUOUS_SEPARATOR'
 }
 
 /**
@@ -43,6 +44,16 @@ export class AmountParseError extends Error {
     this.code = code
   }
 }
+
+/**
+ * Matches an amount whose commas are all valid thousand separators, such as
+ * "1,000" or "1,000,000.50". Input like "0,5" uses a comma as a decimal
+ * separator and is rejected, because stripping the comma would silently
+ * multiply the amount.
+ *
+ * @type {RegExp}
+ */
+const THOUSAND_SEPARATED_PATTERN = /^\d{1,3}(,\d{3})*(\.\d+)?$/
 
 /**
  * Expands scientific notation to decimal format.
@@ -102,7 +113,8 @@ function expandScientificNotation (value, maxDecimals) {
  * @param {string} amount - The amount to parse (e.g., "2.01", "1,000.50", "100")
  * @param {number} decimals - The number of decimal places for the token (e.g., 6 for USDT, 18 for ETH)
  * @returns {bigint} The amount in base units (wei, satoshis, etc.)
- * @throws {AmountParseError} If the input is invalid
+ * @throws {AmountParseError} If the input is invalid, or if a comma is used as
+ * anything other than a thousand separator (e.g., "0,5").
  *
  * @example
  * parseAmountToBaseUnits("2.01", 6)  // Returns 2010000n
@@ -140,7 +152,17 @@ export function parseAmountToBaseUnits (amount, decimals) {
     )
   }
 
-  trimmed = trimmed.replace(/,/g, '')
+  if (trimmed.includes(',')) {
+    if (!THOUSAND_SEPARATED_PATTERN.test(trimmed)) {
+      throw new AmountParseError(
+        `Ambiguous amount format: "${amount}". Commas are only accepted as thousand separators ` +
+        'in groups of three (e.g., "1,000.50"). Use "." as the decimal separator.',
+        AMOUNT_ERROR_CODES.AMBIGUOUS_SEPARATOR
+      )
+    }
+
+    trimmed = trimmed.replace(/,/g, '')
+  }
 
   if (/[eE]/.test(trimmed)) {
     trimmed = expandScientificNotation(trimmed, decimals)

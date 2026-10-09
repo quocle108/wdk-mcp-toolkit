@@ -123,6 +123,39 @@ describe('bridge', () => {
         )
       })
 
+      test('should confirm the parsed amount rather than the raw argument', async () => {
+        const quoteBridgeMock = jest.fn().mockResolvedValue({
+          fee: 21000000000000n,
+          bridgeFee: 500000000000000n
+        })
+        const bridgeMock = jest.fn().mockResolvedValue({ hash: '0xabc123' })
+
+        const accountMock = {
+          getAddress: jest.fn().mockResolvedValue(WALLET_ADDRESS),
+          getBridgeProtocol: jest.fn().mockReturnValue({
+            quoteBridge: quoteBridgeMock,
+            bridge: bridgeMock
+          })
+        }
+
+        server.getTokenInfo.mockReturnValue(USDT_INFO)
+        server.wdk.getAccount.mockResolvedValue(accountMock)
+        server.requestConfirmation.mockResolvedValue({ action: 'accept', content: { confirmed: true } })
+
+        await handler({
+          chain: 'ethereum',
+          targetChain: 'arbitrum',
+          token: 'USDT',
+          amount: '1,000.50'
+        })
+
+        expect(server.requestConfirmation).toHaveBeenCalledWith(
+          expect.stringContaining('Amount: 1000.5\n'),
+          expect.any(Object)
+        )
+        expect(bridgeMock).toHaveBeenCalledWith(expect.objectContaining({ amount: 1000500000n }))
+      })
+
       test('should return cancelled message when user declines', async () => {
         const quoteBridgeMock = jest.fn().mockResolvedValue({
           fee: 21000000000000n,

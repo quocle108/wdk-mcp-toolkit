@@ -14,7 +14,7 @@
 'use strict'
 
 import { z } from 'zod'
-import { parseAmountToBaseUnits } from '../../utils/index.js'
+import { parseAmountToBaseUnits, formatBaseUnitsToAmount } from '../../utils/index.js'
 
 /** @typedef {import('../../server.js').WdkMcpServer} WdkMcpServer */
 
@@ -101,6 +101,8 @@ Error Handling:
           throw new Error('Amount must be greater than zero')
         }
 
+        const confirmedAmount = formatBaseUnitsToAmount(baseUnitAmount, decimals)
+
         const account = await server.wdk.getAccount(chain, 0)
 
         const quote = await account.quoteTransfer({
@@ -113,7 +115,7 @@ Error Handling:
 
 Token: ${tokenSymbol}
 To: ${to}
-Amount: ${amount} ${tokenSymbol} (${baseUnitAmount.toString()} base units)
+Amount: ${confirmedAmount} ${tokenSymbol} (${baseUnitAmount.toString()} base units)
 Estimated Fee: ${quote.fee.toString()}
 
 This transfer is IRREVERSIBLE once broadcast to the ${chain} network.
