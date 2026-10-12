@@ -216,6 +216,11 @@ async function checkGitignore () {
     return 'ignored'
   }
 
+  if (await isTrackedByGit(CONFIG_RELATIVE_PATH)) {
+    console.log(pc.red(`\n${CONFIG_RELATIVE_PATH} is already tracked by Git, so .gitignore cannot hide it.`))
+    return 'refused-tracked'
+  }
+
   console.log(pc.yellow(`Note: ${CONFIG_RELATIVE_PATH} is not in .gitignore`))
   console.log(pc.yellow('The generated config will contain sensitive data.\n'))
 
@@ -237,13 +242,6 @@ async function checkGitignore () {
 
   state = await gitIgnoreState(CONFIG_RELATIVE_PATH)
   if (state !== 'ignored') {
-    // A tracked file stays visible to `git status` however .gitignore reads,
-    // so telling the user to add the rule again would send them in a circle.
-    if (await isTrackedByGit(CONFIG_RELATIVE_PATH)) {
-      console.log(pc.red(`\n${CONFIG_RELATIVE_PATH} is already tracked by Git, so .gitignore cannot hide it.`))
-      return 'refused-tracked'
-    }
-
     console.log(pc.red(`\n${CONFIG_RELATIVE_PATH} is still not ignored by Git.`))
     return 'refused'
   }
