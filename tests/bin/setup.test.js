@@ -76,6 +76,19 @@ describe('gitIgnoreState', () => {
     await expect(gitIgnoreState(CONFIG_PATH)).resolves.toBe('not-ignored')
   })
 
+  test('reports not-ignored for a file Git already tracks, even when .gitignore matches it', async () => {
+    // Regression guard for `git check-ignore --no-index`: that flag makes Git
+    // ignore the index, so a tracked file was reported as safely ignored while
+    // `git status` still showed it. A tracked file is never ignored.
+    const dir = await makeDir(true, '.vscode\n')
+    await fs.mkdir(path.join(dir, '.vscode'), { recursive: true })
+    await fs.writeFile(path.join(dir, CONFIG_PATH), '{}')
+    await execFile('git', ['add', '-f', CONFIG_PATH], { cwd: dir })
+    process.chdir(dir)
+
+    await expect(gitIgnoreState(CONFIG_PATH)).resolves.toBe('not-ignored')
+  })
+
   test('reports unverifiable outside a git repository', async () => {
     const dir = await makeDir(false)
     process.chdir(dir)
@@ -175,5 +188,18 @@ describe('checkGitignore', () => {
     mockConfirm.mockResolvedValue(true)
 
     await expect(checkGitignore()).resolves.toBe('refused')
+  })
+
+  test('refuses as tracked when the config path is already in the index', async () => {
+    // Adding a rule cannot help here, so the caller has to be told to untrack
+    // the file rather than to add the rule it has just added.
+    const dir = await makeDir(true, '.vscode/settings.json\n')
+    await fs.mkdir(path.join(dir, '.vscode'), { recursive: true })
+    await fs.writeFile(path.join(dir, CONFIG_PATH), '{}')
+    await execFile('git', ['add', '-f', CONFIG_PATH], { cwd: dir })
+    process.chdir(dir)
+    mockConfirm.mockResolvedValue(true)
+
+    await expect(checkGitignore()).resolves.toBe('refused-tracked')
   })
 })
